@@ -28,7 +28,9 @@ async function getData() {
     $(".price").html(jsonData.price)
     $(".avlqty").html(jsonData.available_quantity)
     $(".description").html(jsonData.description)
-    $(".selectQty").attr("max",jsonData.available_quantity)      
+    $(".selectQty").attr("max",jsonData.available_quantity)
+    $("#availableQty").val(jsonData.available_quantity)    
+    return jsonData.available_quantity 
     }else{
       alert(jsondata.message)
     }
@@ -37,19 +39,34 @@ async function getData() {
 getData()
 
 
+
 $("#addToCart").click(()=>{
-    let productQty=$(".selectQty").val()
+  let availableQty=$("#availableQty").val()
+  let productQty=$(".selectQty").val()
+  if(!/^\d+$/.test(productQty)){
+    alert("Product quantity must be number")
+  }
+  else if(parseInt(productQty)>parseInt(availableQty)){
+    alert("Quantity can't be more than available quantity")
+  }else{
     let bodyContent = new FormData();
     bodyContent.append("product_id", productId);
     bodyContent.append("product_quantity", productQty);
-
-fetch(baseUrl+"add_to_cart", { 
-  method: "POST",
-  body: bodyContent,
-}).then(function(response) {
-  return response.text();
-}).then(function(data) {
-  console.log(data);
-})
+  
+  fetch(baseUrl+"add_to_cart", { 
+    method: "POST",
+    body: bodyContent,
+  }).then(function(response) {
+    return response.text();
+  }).then(function(data) {
+    data=JSON.parse(data)
+    if(data.status==="success"){
+      alert(data.message)
+      window.location.href="/"
+    }else{
+      alert(data.message)
+    }
+  })
+  }
 })
 

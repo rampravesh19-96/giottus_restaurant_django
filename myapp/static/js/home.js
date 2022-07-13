@@ -1,7 +1,4 @@
-const getId=(id)=>{
-  alert(id)
-}
-
+  
 let apiUrlViewlist = "http://127.0.0.1:9000/api/view_item_list"
 let apiUrlCartData = "http://127.0.0.1:9000/api/get_cart_data"
 
@@ -32,16 +29,15 @@ getCartData()
 
 async function getData(array=[]) {
     let jsondata = await getJson(apiUrlViewlist,array)
-
+  console.log(jsondata);
     if(jsondata.tog){
       $("#showmore").css("color","#dddddd")
     }
     if (jsondata.status==="success"){
-      noOfPage=jsondata.no_of_page
       let jsonData=jsondata.data
       var tt=document.createElement("div")
       tt.id="connn"
-      console.log(jsonData);
+
       for (const i in jsonData) {
         let item=document.createElement("div")
         item.className="item card-body"
@@ -87,6 +83,7 @@ getData()
 
 $("#searchform").submit((e)=>{
   e.preventDefault()
+  $("#showmore").css("color","#0d6efd")
   type="query"
   array=[["query",$("#query").val()],["max_price",$("#max").val()],["min_price",$("#min").val()]]
   getData(array);
@@ -94,6 +91,7 @@ $("#searchform").submit((e)=>{
 
 $("#sortsubmit").submit((e)=>{
   e.preventDefault()
+  $("#showmore").css("color","#0d6efd")
   type="sort"
   array=[["query",$("#query").val()],["max_price",$("#max").val()],["min_price",$("#min").val()]]
   getData(array);

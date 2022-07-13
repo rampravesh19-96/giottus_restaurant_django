@@ -44,6 +44,7 @@ const register=(email,password,confirmPassword,name,dob,phone,address)=>{
         let jsonData=JSON.parse(data)
         console.log(jsonData);
       if(jsonData.status==='success'){
+        alert(jsonData.message)
         document.location.href=jsonData.data.url
       }else{
         alert(jsonData.message)

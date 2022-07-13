@@ -233,20 +233,21 @@ def viewItemList(request):
       noOfProductPerPage=int(os.getenv("NO_OF_PRODUCT_PER_PAGE"))
       data=Product.objects.filter(Q(Q(description__contains=query) | 
       Q(name__contains=query)),Q(price__range=(minPrice,maxPrice)))
+      tog=True
       noOfRows=len(data)
-      print(noOfRows)
-      noOfPage=noOfRows//noOfProductPerPage
-      if noOfRows%noOfProductPerPage==0:
-         noOfPage=(noOfRows//noOfProductPerPage)-1
-      tog=False
-      if page>noOfPage:
-         page=noOfPage
-      if page>noOfPage-1:
-         tog=True
-      # page=page
+      
+      if noOfRows!=0:
+         tog=False
+         noOfPage=noOfRows//noOfProductPerPage
+         if noOfRows%noOfProductPerPage==0:
+            noOfPage=(noOfRows//noOfProductPerPage)-1
+         
+         if page>noOfPage:
+            page=noOfPage
+         if page>noOfPage-1:
+            tog=True
 
-
-      data=data[page*noOfProductPerPage:page*noOfProductPerPage+noOfProductPerPage]
+         data=data[page*noOfProductPerPage:page*noOfProductPerPage+noOfProductPerPage]
    
       data = json.loads(serializers.serialize('json', data))
       return JsonResponse({"status":"success", "message":"Data received", "data":data,"tog":tog})
@@ -384,6 +385,7 @@ def addToCart(request):
       else:
          data=[jsonData]
       data=json.dumps(data)
+
       cartObj.update(product_list=data)
       return JsonResponse({"status":"success", "message":"Added to cart", "data":None})
    except:
@@ -445,7 +447,8 @@ def checkout(request):
       id=jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])["id"]
       cartObj=Cart.objects.filter(customer_id=id)
       data=cartObj[0].product_list
-      data=json.loads(data)
+      if len(data)!=0:
+         data=json.loads(data)
       productIdList=[]
       productIdQuantity=[]
       for i in data:
@@ -501,6 +504,7 @@ def orderHistoryForUser(request):
       name=F('product__name'),description=F('product__description')).annotate(customer_id=F('order__customerid'),time=F('order__created_time')).filter(customer_id=id).values('id','order_id','product_quantity','product_price','name','description','customer_id','time') 
    data=list(data)
    page=int(page)
+   tog=False
    noOfRows=len(data)
    rem=noOfRows%10
    if rem==0:
@@ -509,8 +513,10 @@ def orderHistoryForUser(request):
       noOfPage=noOfRows//10+1
    if page>noOfPage:
       page=noOfPage
+   if page>noOfPage-1:
+      tog=True
 
-      
+ 
 
    data=data[(page-1)*10:page*10]
    for i in data:
@@ -519,7 +525,7 @@ def orderHistoryForUser(request):
       i['product_price']=float(i['product_price'])
    data=json.dumps(data)
    data=json.loads(data)
-   return JsonResponse({"status":"success", "message":"Order history", "data":data})
+   return JsonResponse({"status":"success", "message":"Order history", "data":data,"tog":tog})
    
 
 

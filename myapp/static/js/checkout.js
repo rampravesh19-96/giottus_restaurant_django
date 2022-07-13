@@ -16,6 +16,7 @@ async function getJson(url) {
       if(jsondata.data.length===0){
         $("#placeOrder").css("display","none")
         $("#totalamt").css("display","none")
+        $(".emptyCart").css("display","flex")
       }
       $("#totalamt").html("Total amount : "+jsondata.total)
         noOfPage=jsondata.no_of_page
@@ -88,6 +89,7 @@ fetch("http://127.0.0.1:9000/api/remove_from_cart", {
   if(data.data===null){
     $("#placeOrder").css("display","none")
     $("#totalamt").css("display","none")
+    $(".emptyCart").css("display","flex")
   }
 })
 location.reload()

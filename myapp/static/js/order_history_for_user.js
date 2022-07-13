@@ -17,10 +17,15 @@
   }
 
 
-  async function getData(array) {
+async function getData(array) {
       let data = await getJson(array)
+      let tog=data.tog
+      if(tog){
+        $("#showmore").css("color","#dddddd")
+      }
       data=data.data
-    console.log(data);
+      console.log(data);
+    
     con=document.createElement("div");
     con.className="container"
     for (let i = 0; i < data.length; i++) {
