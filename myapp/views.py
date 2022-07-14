@@ -102,5 +102,30 @@ def editUserProfile(request):
       return redirect("/login")
    
 
+def admin(request):
+   try:
+      token=request.COOKIES.get('token')
+      if not token:
+         return redirect("/login")
+      id=jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])["id"] 
+      userObj=User.objects.filter(id=id)
+      if len(userObj)==0:
+         return redirect("/login")
+      return render(request,"admin.html")
+   except:
+      return redirect("/login")
+def orderHistoryAdmin(request):
+   try:
+      token=request.COOKIES.get('token')
+      if not token:
+         return redirect("/login")
+      id=jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])["id"] 
+      userObj=User.objects.filter(id=id)
+      if len(userObj)==0:
+         return redirect("/login")
+      return render(request,"order_history_for_admin.html")
+   except:
+      return redirect("/login")
+
 
 

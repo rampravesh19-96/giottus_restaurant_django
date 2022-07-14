@@ -88,8 +88,13 @@ def login(request):
       if not request.POST:
          return JsonResponse({"status":"failure", "message":"Invalid request", "data":None})
       token=request.COOKIES.get('token')
+      
       if token:
-         return JsonResponse({"status":"success", "message":"You are already log in", "data":{"url":"/"}})
+         isAdmin=jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])['is_admin']
+         url="/"
+         if isAdmin:
+            url="/admin"
+         return JsonResponse({"status":"success", "message":"You are already log in", "data":{"url":url}})
 
       email = request.POST.get('email')
       password = request.POST.get('password')
@@ -101,10 +106,14 @@ def login(request):
          return JsonResponse({"status":"failure", "message":"Invalid user id or password", "data":None})
       payload={
             'id':data[0][0],
+            'is_admin':data[0][3]
         }
  
       token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256").decode('utf-8')
-      response=JsonResponse({"status":"success", "message":"Successfully logged in", "data":{"token":str(token),"url":"/"}})
+      url="/"
+      if data[0][3]:
+         url="/admin"
+      response=JsonResponse({"status":"success", "message":"Successfully logged in", "data":{"token":str(token),"url":url}})
       response.set_cookie(key='token',value=token,max_age = 100000, expires = None)
       response.cookies['token']['expires'] = datetime.today() + timedelta(days= 1) 
       return response
@@ -216,6 +225,8 @@ def viewItemList(request):
       query=request.POST.get('query')
       minPrice=request.POST.get('min_price')
       maxPrice=request.POST.get('max_price')
+      noOfProductPerPage=request.POST.get('no_of_product_per_page')
+      print(noOfProductPerPage)
       if not page:
          page="1"
       if not query:
@@ -228,9 +239,14 @@ def viewItemList(request):
          return JsonResponse({"status":"failure", "message":"Page, max price and min price must be number", "data":None})
       if int(maxPrice)<=int(minPrice):
          return JsonResponse({"status":"failure", "message":"max price can not be less than or equal to min price", "data":None})
+      if not noOfProductPerPage:
+         noOfProductPerPage=os.getenv("NO_OF_PRODUCT_PER_PAGE")
+      if not noOfProductPerPage.isdigit():
+         return JsonResponse({"status":"failure", "message":"No of product per page must be a number", "data":None})
 
       page=int(page)-1
-      noOfProductPerPage=int(os.getenv("NO_OF_PRODUCT_PER_PAGE"))
+      noOfProductPerPage=int(noOfProductPerPage)
+      print(noOfProductPerPage)
       data=Product.objects.filter(Q(Q(description__contains=query) | 
       Q(name__contains=query)),Q(price__range=(minPrice,maxPrice)))
       tog=True
@@ -321,6 +337,16 @@ def editItem(request):
    except:
       return JsonResponse({"status":"failure", "message":"An error occurred", "data":None})
 
+
+def deleteItem(request):
+   # try:
+      if not request.POST:
+         return JsonResponse({"status":"failure", "message":"Invalid request", "data":None})
+      productId=request.POST.get('product_id')
+      Product.objects.filter(pk=int(productId)).delete()
+      return JsonResponse({"status":"success", "message":"Item deleted", "data":None})
+   # except:
+   #    return JsonResponse({"status":"failure", "message":"An error occurred", "data":None})
 
 
 def createOrder(request):
@@ -464,33 +490,61 @@ def checkout(request):
    except:
       return JsonResponse({"status":"failure", "message":"An error occurred", "data":None})
 
-def orderHistory(request):
+# def orderHistoryForAdmin(request):
    # try:
-      if not request.method=="POST":
-         return JsonResponse({"status":"failure", "message":"Invalid request", "data":None})
-      # customerId=request.POST.get('customer_id')
-      page=request.POST.get('page')
-      # token=request.COOKIES.get('token')
-      # if not token:
-      #    return JsonResponse({"status":"failure", "message":"Unable to validate request", "data":None})
-      id=5#jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])["id"] 
-      if not page:
-         return JsonResponse({"status":"failure", "message":"Page is required", "data":None})
-      # if id!=customerId:
-      #    return JsonResponse({"status":"failure", "message":"Invalid customer id", "data":None})
-      data=OrderDetails.objects.select_related().annotate(
-         name=F('product__name'),description=F('product__description')).values('id','order_id','product_quantity','product_price','name','description') 
+      # if not request.method=="POST":
+      #    return JsonResponse({"status":"failure", "message":"Invalid request", "data":None})
+      # page=request.POST.get('page')
+      # if not page:
+      #    return JsonResponse({"status":"failure", "message":"Page is required", "data":None})
+      # data=OrderDetails.objects.select_related().annotate(
+      #    name=F('product__name'),description=F('product__description')).values('id','order_id','product_quantity','product_price','name','description') 
 
-      data=list(data)
+      # data=list(data)
       
-      for i in data:
-         i['product_price']=float(i['product_price'])
-      data=json.dumps(data)
-      data=json.loads(data)
-      return JsonResponse({"status":"success", "message":"Order history", "data":data})
+      # for i in data:
+      #    i['product_price']=float(i['product_price'])
+      # data=json.dumps(data)
+      # data=json.loads(data)
+      # return JsonResponse({"status":"success", "message":"Order history", "data":data})
    # except:
    #    return JsonResponse({"status":"failure", "message":"An error occurred", "data":None})
 
+def orderHistoryForAdmin(request):
+   if not request.method=="POST":
+      return JsonResponse({"status":"failure", "message":"Invalid request", "data":None})
+   token=request.COOKIES.get('token')
+   id=jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])["id"] 
+   print(id)
+   page=request.POST.get('page')
+   if not page:
+      return JsonResponse({"status":"failure", "message":"Page is required", "data":None})
+   data=OrderDetails.objects.select_related().annotate(
+      name=F('product__name'),description=F('product__description')).annotate(customer_id=F('order__customerid'),time=F('order__created_time')).values('id','order_id','product_quantity','product_price','name','description','customer_id','time') 
+   data=list(data)
+   page=int(page)
+   tog=False
+   noOfRows=len(data)
+   rem=noOfRows%10
+   if rem==0:
+      noOfPage=noOfRows//10
+   else:
+      noOfPage=noOfRows//10+1
+   if page>noOfPage:
+      page=noOfPage
+   if page>noOfPage-1:
+      tog=True
+
+ 
+
+   data=data[(page-1)*10:page*10]
+   for i in data:
+      i["time"]=str(i["time"])[:-6]
+   for i in data:
+      i['product_price']=float(i['product_price'])
+   data=json.dumps(data)
+   data=json.loads(data)
+   return JsonResponse({"status":"success", "message":"Order history", "data":data,"tog":tog})
 def orderHistoryForUser(request):
    if not request.method=="POST":
       return JsonResponse({"status":"failure", "message":"Invalid request", "data":None})

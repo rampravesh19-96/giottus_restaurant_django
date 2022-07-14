@@ -16,7 +16,54 @@ async function getJson(url,bodyData=[]) {
     let data = await response.json()
     return data;
 }
+async function getData(array=[]) {
+  let jsondata = await getJson(apiUrlViewlist,array)
+console.log(jsondata);
+  if(jsondata.tog){
+    $("#showmore").css("color","#dddddd")
+  }
+  if (jsondata.status==="success"){
+    let jsonData=jsondata.data
+    var tt=document.createElement("div")
+    tt.id="connn"
 
+    for (const i in jsonData) {
+      let item=document.createElement("div")
+      item.className="item card-body"
+      item.id=jsonData[i].pk
+      item.setAttribute('onclick', 'my_function(this.id)');
+      let image=document.createElement("img")
+      image.src="https://img.freepik.com/free-photo/indian-chicken-biryani-served-terracotta-bowl-with-yogurt-white-background-selective-focus_466689-72554.jpg?w=1380&t=st=1657178102~exp=1657178702~hmac=eee7e590a1a70249bf6c36e8a3e6730261dc173c7646ecb66031fb4947bfea5f"
+      image.className="itemimage"
+      item.append(image)
+
+      let name=document.createElement("div")
+      name.className="name card-title"
+
+      let description=document.createElement("div")
+      description.className="description card-text"
+
+      let price=document.createElement("div")
+      price.className="price"
+
+      name.append(jsonData[i].fields.name)
+      item.append(name)
+
+      price.append(jsonData[i].fields.price)
+      item.append(price)
+      
+      description.append(jsonData[i].fields.description)
+      item.append(description)
+
+      tt.append(item)
+    }
+    $("#container").html(tt)
+  }else{
+    alert(jsondata.message)
+  }
+
+
+}
 
 async function getCartData() {
   let jsonCartData = await getJson(apiUrlCartData)
@@ -27,54 +74,7 @@ getCartData()
 
 
 
-async function getData(array=[]) {
-    let jsondata = await getJson(apiUrlViewlist,array)
-  console.log(jsondata);
-    if(jsondata.tog){
-      $("#showmore").css("color","#dddddd")
-    }
-    if (jsondata.status==="success"){
-      let jsonData=jsondata.data
-      var tt=document.createElement("div")
-      tt.id="connn"
 
-      for (const i in jsonData) {
-        let item=document.createElement("div")
-        item.className="item card-body"
-        item.id=jsonData[i].pk
-        item.setAttribute('onclick', 'my_function(this.id)');
-        let image=document.createElement("img")
-        image.src="https://img.freepik.com/free-photo/indian-chicken-biryani-served-terracotta-bowl-with-yogurt-white-background-selective-focus_466689-72554.jpg?w=1380&t=st=1657178102~exp=1657178702~hmac=eee7e590a1a70249bf6c36e8a3e6730261dc173c7646ecb66031fb4947bfea5f"
-        image.className="itemimage"
-        item.append(image)
-  
-        let name=document.createElement("div")
-        name.className="name card-title"
-  
-        let description=document.createElement("div")
-        description.className="description card-text"
-  
-        let price=document.createElement("div")
-        price.className="price"
-  
-        name.append(jsonData[i].fields.name)
-        item.append(name)
-  
-        price.append(jsonData[i].fields.price)
-        item.append(price)
-        
-        description.append(jsonData[i].fields.description)
-        item.append(description)
-  
-        tt.append(item)
-      }
-      $("#container").html(tt)
-    }else{
-      alert(jsondata.message)
-    }
-
-
-}
 
 
 
